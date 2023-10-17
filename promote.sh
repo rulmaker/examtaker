@@ -33,6 +33,14 @@ fi
 # Archivo de salida para el resumen de cambios
 output_file="CHANGELOG.md"
 
+# Verificar si el archivo CHANGELOG.md existe
+if [ -f "$output_file" ]; then
+  echo "El archivo $output_file existe. Agregando nueva información al archivo."
+else
+  echo "El archivo $output_file no existe. Creando un nuevo archivo."
+  touch "$output_file"
+fi
+
 # Función para agregar commits a la categoría correspondiente
 add_commits_to_categories() {
   local category_commits=$(git log --oneline $branch_name --grep="^fix:" | sed 's/^fix://' | sed 's/ /: /')
@@ -71,18 +79,17 @@ output_file="CHANGELOG.md"
 add_commits_to_categories
 
 # Generar la próxima versión
-next_version="v$major.$minor.$patch"  # Agrega "v" a la versión
+next_version="$major.$minor.$patch"
 
-# Reemplazar {{version}} con la versión actual
-sed -i "s/{{version}}/$next_version/g" "$output_file"
+echo "La versión generada es: $next_version"
 
 # Crear una rama para desarrollo futuro
-future_branch="future_$next_version-snapshot"
+future_branch="future_${major}_${minor}_${patch}-SNAPSHOT"  # Agrega "-SNAPSHOT" al final
 git checkout -b "$future_branch"
 git push origin "$future_branch"
 
 # Crear una rama para la versión de lanzamiento
-release_branch="release_$next_version"
+release_branch="release_${major}_${minor}_${patch}"
 git checkout -b "$release_branch"
 git push origin "$release_branch"
 
@@ -94,10 +101,6 @@ git tag -a "$next_version" -m "Versión $next_version"
 github_user="rulmaker"
 github_repo="examtaker"
 git clone "https://github.com/$github_user/$github_repo.git" --depth 1 --branch master --single-branch "$output_file"
-cp "$output_file" .  # Copia el archivo CHANGELOG.md al directorio actual
-git add "$output_file"
-git commit -m "Añadir resumen de cambios para la versión $next_version"
-git push origin main
 
 echo "Las ramas $future_branch y $release_branch se han creado y enviado a GitHub."
 echo "Se ha agregado un tag '$next_version' al repositorio."
